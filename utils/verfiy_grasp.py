@@ -11,7 +11,7 @@ contact_force_matrix = np.array([[1, -1],
 determinant = np.linalg.det(contact_force_matrix)
 
 # 判断是否能抓取物体
-can_grasp = determinant != 0
+can_grasp = determinant != 0#因为没有非0向量能让接触力矩阵变为0，所以此时的状态就是稳定的（可以理解成任何外力作用下都一直有接触力）--有接触力就是一直能抓着
 
 print("接触点力矩阵的行列式：", determinant)
 print("是否能抓取物体：", can_grasp)
