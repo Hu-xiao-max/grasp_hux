@@ -9,6 +9,8 @@ centroid = np.mean(object_vertices, axis=0)
 # 计算接触点相对于质心的向量
 contact_vectors = object_vertices - centroid
 
+print(contact_vectors)
+
 # 计算接触点之间的摩擦锥角度（假设摩擦系数为 0.5）
 friction_angle = np.arctan(0.5)
 
@@ -37,7 +39,7 @@ print(grasp_matrix)
 determinant = np.linalg.det(grasp_matrix)
 
 # 判断是否能抓取物体
-can_grasp = determinant != 0
+can_grasp = determinant != 0#行列式不等于0代表接触力不是线性相关是稳定的
 
 print("接触点力矩阵的行列式：", determinant)
 print("是否能抓取物体：", can_grasp)
