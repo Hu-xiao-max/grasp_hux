@@ -82,31 +82,35 @@ def find_optimal_contact_grasp8_optimization():
     draw_optimal_contact_grasp8(res['x'])
 
 def precision_grasp8(contact_p_set, contact_n_set):
+
+    '''
+    输入基于物体质心的接触点和接触向量
+    '''
     """
     Args:
     - contact_p_set (3, n): vertical vector of (contact_p1, contact_p2, contact_p3)
     - contact_n_set (3, n): vertical vector of (contact_n1, contact_n2, contact_n3)
     """
 
-    contact_p1 = contact_p_set[:, :1]
+    contact_p1 = contact_p_set[:, :1]#三个接触点
     contact_p2 = contact_p_set[:, 1:2]
     contact_p3 = contact_p_set[:, 2:3]
     contact_n1 = contact_n_set[:, 0]
     contact_n2 = contact_n_set[:, 1]
     contact_n3 = contact_n_set[:, 2]
 
-    friction_cone1 = get_friction_cone_vector(contact_n1, 0.8)
+    friction_cone1 = get_friction_cone_vector(contact_n1, 0.8)#摩擦锥计算
     friction_cone2 = get_friction_cone_vector(contact_n2, 0.8)
     friction_cone3 = get_friction_cone_vector(contact_n3, 0.8)
 
     rho = 0.1
 
-    primitive_torque1 = np.cross(contact_p1, friction_cone1, axisa = 0, axisb = 0)
+    primitive_torque1 = np.cross(contact_p1, friction_cone1, axisa = 0, axisb = 0)#叉乘接触向量和摩擦锥得到力矩
     primitive_torque2 = np.cross(contact_p2, friction_cone2, axisa = 0, axisb = 0)
     primitive_torque3 = np.cross(contact_p3, friction_cone3, axisa = 0, axisb = 0)
 
-    wrench1 = np.hstack([friction_cone1.T, primitive_torque1 / rho])
-    wrench2 = np.hstack([friction_cone2.T, primitive_torque2 / rho])
+    wrench1 = np.hstack([friction_cone1.T, primitive_torque1 / rho])#计算得到力螺旋
+    wrench2 = np.hstack([friction_cone2.T, primitive_torque2 / rho])#除去的系数rho在某种意义上可以理解为归一化
     wrench3 = np.hstack([friction_cone3.T, primitive_torque3 / rho])
 
     wrenches = np.vstack([wrench1, wrench2, wrench3])
