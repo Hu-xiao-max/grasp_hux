@@ -38,3 +38,4 @@ contact_points_pcd = o3d.geometry.PointCloud()
 contact_points_pcd.points = o3d.utility.Vector3dVector(contact_points)
 o3d.visualization.draw_geometries([contact_points_pcd])
 
+

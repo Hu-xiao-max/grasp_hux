@@ -1,3 +1,4 @@
+import numpy as np
 def read_obj_vertices(file_path):
     vertices = []
 
@@ -14,7 +15,10 @@ def read_obj_vertices(file_path):
 if __name__=='__main__':
     obj_file_path = './object/nontextured.obj'
     vertices = read_obj_vertices(obj_file_path)
-    #print(vertices)
+    print(len(vertices))
+    vertices=np.array(vertices)
+
+    print(vertices.shape)
 
     # list=[]
 

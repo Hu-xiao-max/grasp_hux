@@ -13,9 +13,11 @@ def generate_unit_sphere_points(num_points):
     points = np.stack((x, y, z), axis=-1)
 
     return points
-
+#生成1296个抓取向量
 num_points = 1296
 unit_sphere_points = generate_unit_sphere_points(num_points)
+
+print(unit_sphere_points)
 
 # 可视化点云
 fig = plt.figure()
