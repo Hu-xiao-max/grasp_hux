@@ -63,4 +63,3 @@ Similar cloud indices: (58, 3) {0: [0, 2], 1: [1]}
 Similar cloud indices: (61, 3) {0: [0], 1: [1]}
 Similar cloud indices: (59, 3) {0: [0, 1]}
 Similar cloud indices: (63, 3) {0: [0]}
-30.6431622505188
