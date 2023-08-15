@@ -3,6 +3,11 @@ import time
 import open3d as o3d
 from collections import defaultdict
 from scipy.spatial import cKDTree
+import sys
+import time
+import datetime
+import os
+
 
 class Area_get():
     def __init__(self, filepath):
@@ -12,8 +17,8 @@ class Area_get():
         self.point_clouds=self.downsample_points(self.point_clouds)
         #生成1296个抓取向量
         self.grasp_vectors=self.generate_unit_sphere_points(1296)
-        #夹爪尺寸
-        self.gripper_size = np.array([2, 2, 2])
+        #夹爪尺寸参照GPD的Antipod抓取
+        self.gripper_size = np.array([0.03, 0.05, 0.08])
 
         self.grasp_interaction_area=[]
         self.list_contact_points_shape=[]
@@ -42,7 +47,7 @@ class Area_get():
         返回：
             numpy.ndarray: 降采样后的点云，shape 为 (M, 3)。
         """
-        voxel_size=0.01#按照1cm的粒度降采样
+        voxel_size=0.001#按照1mm的粒度降采样，downsample的粒度
         point_cloud = o3d.geometry.PointCloud()
         point_cloud.points = o3d.utility.Vector3dVector(points)
         downsampled_point_cloud = point_cloud.voxel_down_sample(voxel_size)
@@ -165,6 +170,11 @@ class Area_get():
             similar_cloud_indices[i] = group
 
         return similar_cloud_indices
+    
+
+
+
+
 
 
 
@@ -174,13 +184,30 @@ class Area_get():
     
 
 if __name__ == '__main__':
+
+
+
     strat=time.time()
+    # 获取当前时间
+    now = datetime.datetime.now()
+
+    if not os.path.exists('./output/'+now.strftime('%Y-%m-%d')):
+        os.makedirs('./output/'+now.strftime('%Y-%m-%d'))
+    f=open('./output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M-%S') +".txt","w")
+    sys.stdout=f
 
     filepath='./object/nontextured.obj'
     area_get=Area_get(filepath)
     #先是选择一个抓取向量然后基于抓取向量生成抓取点抓再根据抓取点提取夹爪点云
     for contact_vector in area_get.grasp_vectors:#遍历1296个抓取向量生成抓取点
     # gripper_direction = np.array([0, 0, 1])
+
+        
+        
+        # print('contac_vector-------------------------------------------',contact_vector)    
+        
+        
+        
         contact_points=area_get.compute_contact(contact_vector)
         #print(contact_points.shape)
         for contact_point in contact_points:#遍历抓取点生成夹爪点云
@@ -191,6 +218,11 @@ if __name__ == '__main__':
                 # ！！！！！！！可以在这里储存抓取向量和抓取点对应的config！！！
                 area_get.list_contact_points_shape.append(points_in_gripper.shape)
                 area_get.grasp_interaction_area.append(points_in_gripper)
+
+                
+                # print(contact_point)
+
+
             else:
                 continue
     #print(area_get.list_contact_points_shape)
@@ -213,6 +245,7 @@ if __name__ == '__main__':
             clouds.append(area_get.grasp_interaction_area[clouds_index])
         similar_cloud_indices = area_get.find_similar_cloud_indices(clouds)
         print("Similar cloud indices:",element, similar_cloud_indices)
+
 
         
     end=time.time()
