@@ -47,7 +47,7 @@ class Area_get():
         返回：
             numpy.ndarray: 降采样后的点云，shape 为 (M, 3)。
         """
-        voxel_size=0.001#按照1mm的粒度降采样，downsample的粒度
+        voxel_size=0.005#按照1mm的粒度降采样，downsample的粒度
         point_cloud = o3d.geometry.PointCloud()
         point_cloud.points = o3d.utility.Vector3dVector(points)
         downsampled_point_cloud = point_cloud.voxel_down_sample(voxel_size)
@@ -191,12 +191,12 @@ if __name__ == '__main__':
     # 获取当前时间
     now = datetime.datetime.now()
 
-    if not os.path.exists('./output/'+now.strftime('%Y-%m-%d')):
-        os.makedirs('./output/'+now.strftime('%Y-%m-%d'))
-    f=open('./output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M-%S') +".txt","w")
+    if not os.path.exists('./area_get/output/'+now.strftime('%Y-%m-%d')):
+        os.makedirs('./area_get/output/'+now.strftime('%Y-%m-%d'))
+    f=open('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M-%S') +".txt","w")
     sys.stdout=f
 
-    filepath='./object/nontextured.obj'
+    filepath='./area_get/object/nontextured.obj'
     area_get=Area_get(filepath)
     #先是选择一个抓取向量然后基于抓取向量生成抓取点抓再根据抓取点提取夹爪点云
     for contact_vector in area_get.grasp_vectors:#遍历1296个抓取向量生成抓取点
