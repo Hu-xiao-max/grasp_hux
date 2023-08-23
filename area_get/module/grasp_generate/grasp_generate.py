@@ -16,7 +16,8 @@ class grasp_config():
             #self.point_clouds=self.downsample_points(self.point_clouds,voxel_size=0.01)
             #print(self.point_clouds.shape)
             # 物体的点法向量
-            self.normals,self.pcd=self.generate_normals()
+            self.normals = self.generate_normals()
+            self.pcd=self.generate_pcd()
             #生成1296个抓取向量
             self.grasp_vectors=self.generate_unit_sphere_points(1296)
             # 生成抓取坐标系
@@ -56,13 +57,37 @@ class grasp_config():
         downsampled_point_cloud = point_cloud.voxel_down_sample(voxel_size)
         return np.asarray(downsampled_point_cloud.points)
     
-    def generate_normals(self):
+
+    def generate_pcd(self):
+        #qpc重定向，这样点云法向量都指向物体外部
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(self.point_clouds)
-        k=10#k控制的是搜索的neighbour
+        k = 10  # k控制的是搜索的neighbour
+        o3d.geometry.PointCloud.estimate_normals(pcd, search_param=o3d.geometry.KDTreeSearchParamKNN(k))
+    
+        return pcd
+    
+    def generate_normals(self):
+        #qpc重定向，这样点云法向量都指向物体外部
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(self.point_clouds)
+        k = 10  # k控制的是搜索的neighbour
         o3d.geometry.PointCloud.estimate_normals(pcd, search_param=o3d.geometry.KDTreeSearchParamKNN(k))
         normals = np.asarray(pcd.normals)
-        return normals,pcd
+
+        # 计算点云的中心点
+        center = np.mean(self.point_clouds, axis=0)
+
+        # 判断法向量是否指向物体外部，如果不是则翻转
+        for i in range(normals.shape[0]):
+            vector_to_center = center - self.point_clouds[i]
+            dot_product = np.dot(normals[i], vector_to_center)
+            if dot_product > 0:#大于0代表同向
+                normals[i] = -normals[i]
+
+
+
+        return normals
 
     
 
