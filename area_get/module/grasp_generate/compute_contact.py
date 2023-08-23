@@ -7,6 +7,7 @@ start=time.time()
 # 加载点云数据（请替换为实际的点云文件路径）
 pcd = o3d.io.read_point_cloud('/home/tencent_go/paper/area_get/object/rabbit1.pcd')
 
+
 # 对点云进行下采样和平滑处理
 
 k=10#k控制的是搜索的neighbour

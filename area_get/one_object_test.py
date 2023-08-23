@@ -174,15 +174,6 @@ class Area_get():
 
 
 
-
-
-
-
-
-
-
-    
-
 if __name__ == '__main__':
 
 
