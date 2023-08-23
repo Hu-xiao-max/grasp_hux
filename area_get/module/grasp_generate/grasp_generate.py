@@ -140,8 +140,14 @@ class grasp_config():
 
 
 if __name__=='__main__':
+    now = datetime.datetime.now()
+    if not os.path.exists('./area_get/output/'+now.strftime('%Y-%m-%d')):
+        os.makedirs('./area_get/output/'+now.strftime('%Y-%m-%d'))
+    f=open('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M-%S') +".txt","w")
+    sys.stdout=f
+
     start=time.time()
-    filepath='./object/nontextured.obj'
+    filepath='./area_get/object/nontextured.obj'
     graspconfig=grasp_config(filepath)
     count=0
     for contact_z, contact_x, contact_y in zip(graspconfig.grasp_vectors, graspconfig.grasp_x, graspconfig.grasp_y):
@@ -150,7 +156,8 @@ if __name__=='__main__':
         if contact_points.shape[0]>2:
             for contact_point in contact_points:
                 if not graspconfig.is_gripper_colliding_with_point_cloud(contact_point, graspconfig.point_clouds, contact_z , contact_y):
-                    print('contact_point={},grasp_z={}'.format(contact_point,contact_z))
+                    #print('contact_point={},grasp_z={}'.format(contact_point,contact_z))
+                    print(contact_point,contact_z)
                     count += 1
                     break
     end=time.time()
