@@ -13,7 +13,7 @@ class grasp_config():
             self.filepath=filepath
             self.point_clouds=self.read_obj_vertices()
             #物体点云downsample按照0.01m downsample
-            self.point_clouds=self.downsample_points(self.point_clouds,voxel_size=0.01)
+            #self.point_clouds=self.downsample_points(self.point_clouds,voxel_size=0.01)
             #print(self.point_clouds.shape)
             # 物体的点法向量
             self.normals,self.pcd=self.generate_normals()
@@ -123,12 +123,13 @@ class grasp_config():
         else:
             return False#代表没发生碰撞
 
-    def is_gripper_colliding_with_point_cloud(self, gripper_grasp_point, gripper_grasp_vector, point_cloud):
+    def is_gripper_colliding_with_point_cloud(self, gripper_grasp_point, point_cloud , gripper_grasp_vector, contact_y):
         # Compute the positions of the gripper fingertips in the object coordinate system
         gripperwidth_size=self.gripper_size[1]
         half_gripperwidth_size = gripperwidth_size / 2
-        fingertip1_position = gripper_grasp_point + half_gripperwidth_size * gripper_grasp_vector
-        fingertip2_position = gripper_grasp_point - half_gripperwidth_size * gripper_grasp_vector
+        gripper_grasp_point = gripper_grasp_point - self.gripper_size[2] * gripper_grasp_vector
+        fingertip1_position = gripper_grasp_point + half_gripperwidth_size * contact_y
+        fingertip2_position = gripper_grasp_point - half_gripperwidth_size * contact_y
 
         # Check if the fingertips are colliding with the point cloud
         fingertip1_colliding = self.is_point_colliding_with_point_cloud(fingertip1_position, point_cloud)
@@ -148,7 +149,7 @@ if __name__=='__main__':
         contact_points=graspconfig.compute_contact(contact_z)
         if contact_points.shape[0]>2:
             for contact_point in contact_points:
-                if not graspconfig.is_gripper_colliding_with_point_cloud(contact_point, contact_y, graspconfig.point_clouds):
+                if not graspconfig.is_gripper_colliding_with_point_cloud(contact_point, graspconfig.point_clouds, contact_z , contact_y):
                     print('contact_point={},grasp_z={}'.format(contact_point,contact_z))
                     count += 1
                     break
