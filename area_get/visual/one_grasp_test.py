@@ -62,9 +62,29 @@ def read_obj_vertices(objfilepath):
 
         return vertices
 
+def point_inside_gripper(point, gripper, tolerance=1e-6):
+    aabb = gripper.get_axis_aligned_bounding_box()
+    point_min = aabb.min_bound - tolerance
+    point_max = aabb.max_bound + tolerance
+    return np.all(point > point_min) and np.all(point < point_max)
+
 def visualize_gripper_and_point_cloud(grippers, point_cloud):
     # 创建坐标系
     frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
+
+    # 设置点云颜色
+    colors = []
+    for point in point_cloud.points:
+        in_gripper_space = False
+        for gripper in grippers:
+            if point_inside_gripper(point, gripper):
+                in_gripper_space = True
+                break
+        if in_gripper_space:
+            colors.append([1, 0, 0])  # 红色
+        else:
+            colors.append([1, 1, 0])  # 黄色
+    point_cloud.colors = o3d.utility.Vector3dVector(colors)
 
     # 添加坐标系、夹爪和点云到要显示的几何体列表中
     geometries = grippers + [point_cloud, frame]
@@ -98,14 +118,34 @@ if __name__ == "__main__":
     #读取抓取点和抓取配置
     # grasppoints , graspvector_z = graspconfig(filepath)
 
-    grasppoints = [[0,0,-0.02],[-0.01,-0.1,-0.03],[-0.01,0.02,0.05],[-0.01,0.02,0.15],[-0.01,0.02,0.1],[-0.01,0.02,0.2]]
-    graspvector_z = [[0,1,0],[0,1,1],[0,0,1],[0,0.5,1],[0,1.2,1],[0,-1,1]]
- 
+    pos = [0,0,0]
+    vec = [1,0,0]
+    grippers = [create_gripper(position=pos, gripper_vector=vec)]
+
+    # grasppoints = [[0,0,-0.02],[-0.01,-0.1,-0.03],[-0.01,0.02,0.05],[-0.01,0.02,0.15],[-0.01,0.02,0.1],[-0.01,0.02,0.2]]
+    # graspvector_z = [[0,1,0],[0,1,1],[0,0,1],[0,0.5,1],[0,1.2,1],[0,-1,1]]
+    # grippers = [create_gripper(position=pos, gripper_vector=vec) for pos, vec in zip(grasppoints[0:6], graspvector_z[0:6])]
+
+    visualize_gripper_and_point_cloud(grippers, point_cloud)
+# 主程序
+if __name__ == "__main__":
+    objfilepath='./area_get/object/nontextured.obj'
+    points = read_obj_vertices(objfilepath)
+    point_cloud = o3d.geometry.PointCloud()
+    point_cloud.points = o3d.utility.Vector3dVector(points)
+
+    filepath='area_get/output/2023-08-24/11-32-16.txt'
+    #读取抓取点和抓取配置
+    # grasppoints , graspvector_z = graspconfig(filepath)
+
+    pos = [-0.01,0.02,0.2]
+    vec = [0,-1,1]
     # pos = [0,0,0]
     # vec = [1,0,0]
-    #grippers = [create_gripper(position=pos, gripper_vector=vec)]
+    grippers = [create_gripper(position=pos, gripper_vector=vec)]
 
-    grippers = [create_gripper(position=pos, gripper_vector=vec) for pos, vec in zip(grasppoints[0:6], graspvector_z[0:6])]
-    
+    # grasppoints = [[0,0,-0.02],[-0.01,-0.1,-0.03],[-0.01,0.02,0.05],[-0.01,0.02,0.15],[-0.01,0.02,0.1],[-0.01,0.02,0.2]]
+    # graspvector_z = [[0,1,0],[0,1,1],[0,0,1],[0,0.5,1],[0,1.2,1],[0,-1,1]]
+    # grippers = [create_gripper(position=pos, gripper_vector=vec) for pos, vec in zip(grasppoints[0:6], graspvector_z[0:6])]
 
     visualize_gripper_and_point_cloud(grippers, point_cloud)
