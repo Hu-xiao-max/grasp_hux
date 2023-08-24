@@ -62,11 +62,30 @@ def read_obj_vertices(objfilepath):
 
         return vertices
 
-
-# 可视化夹爪和点云
 def visualize_gripper_and_point_cloud(grippers, point_cloud):
-    geometries = grippers + [point_cloud]
-    o3d.visualization.draw_geometries(geometries)
+    # 创建坐标系
+    frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
+
+    # 添加坐标系、夹爪和点云到要显示的几何体列表中
+    geometries = grippers + [point_cloud, frame]
+
+    # 创建一个可视化器
+    vis = o3d.visualization.Visualizer()
+    vis.create_window()
+
+    # 将几何体添加到可视化器中
+    for geometry in geometries:
+        vis.add_geometry(geometry)
+
+    # 设置视点，使坐标系可见
+    vis.get_render_option().point_size = 2.0
+    vis.get_view_control().set_zoom(0.6)
+
+    # 运行可视化器
+    vis.run()
+
+    # 关闭可视化器
+    vis.destroy_window()
 
 # 主程序
 if __name__ == "__main__":
@@ -75,16 +94,18 @@ if __name__ == "__main__":
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(points)
 
-    filepath='area_get/output/2023-08-24/00-29-32.txt'
+    filepath='area_get/output/2023-08-24/11-32-16.txt'
     #读取抓取点和抓取配置
-    grasppoints , graspvector_z = graspconfig(filepath)
-    pos=grasppoints[0]
-    vec=graspvector_z[0]
+    # grasppoints , graspvector_z = graspconfig(filepath)
+
+    grasppoints = [[-0.01,0,-0.02],[-0.01,-0.1,-0.03]]
+    graspvector_z = [[0,1,0],[0,1,0]]
+
     # pos = [0,0,0]
     # vec = [1,0,0]
-    print('pos={},vec={}'.format(pos,vec))
+    #grippers = [create_gripper(position=pos, gripper_vector=vec)]
 
-  
-    grippers = [create_gripper(position=pos, gripper_vector=vec)]
+    grippers = [create_gripper(position=pos, gripper_vector=vec) for pos, vec in zip(grasppoints[0:2], graspvector_z[0:2])]
+    
 
     visualize_gripper_and_point_cloud(grippers, point_cloud)
