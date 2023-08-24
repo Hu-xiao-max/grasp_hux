@@ -7,14 +7,16 @@ import sys
 import time
 import datetime
 import os
+import math
 
 class grasp_config():
     def __init__(self, filepath):
             self.filepath=filepath
-            self.point_clouds=self.read_obj_vertices()
+            self.point_cloud=self.read_obj_vertices()
             #物体点云downsample按照0.01m downsample
-            #self.point_clouds=self.downsample_points(self.point_clouds,voxel_size=0.01)
-            #print(self.point_clouds.shape)
+            self.point_clouds=self.downsample_points(self.point_cloud,voxel_size=0.01)
+            # print(self.point_clouds.shape)
+            # print(self.point_cloud.shape)
             # 物体的点法向量
             self.normals = self.generate_normals()
             self.pcd=self.generate_pcd()
@@ -85,8 +87,6 @@ class grasp_config():
             if dot_product > 0:#大于0代表同向
                 normals[i] = -normals[i]
 
-
-
         return normals
 
     
@@ -124,13 +124,22 @@ class grasp_config():
 
         return rotated_points_x,rotated_points_y
 
-    
-    def compute_contact(self,gripper_direction):
+
+
+
+
+    def compute_contact(self, gripper_direction):
         # 计算夹爪方向与点云法向量之间的夹角
-        angles = np.arccos(np.dot(self.normals, gripper_direction))
+        gripper_direction = np.array(gripper_direction)
+        gripper_direction_norm = np.linalg.norm(gripper_direction)
+        normals_norm = np.linalg.norm(self.normals, axis=1)
+        
+        cos_angles = np.dot(self.normals, gripper_direction) / (normals_norm * gripper_direction_norm)
+        angles = np.arccos(cos_angles)
+        
         # 定义一个阈值来选择可接触的点（这里假设夹角小于 45 度的点可以接触）
         # 提取可接触的点
-        contact_points = np.asarray(self.pcd.points)[np.logical_and(np.radians(160) < angles, angles < np.radians(180))]
+        contact_points = np.asarray(self.pcd.points)[np.logical_and(np.radians(135) < angles, angles < np.radians(180))]
         
         # 将可接触的点保存到新的点云对象并可视化
         # contact_points_pcd = o3d.geometry.PointCloud()
@@ -180,11 +189,11 @@ if __name__=='__main__':
         contact_points=graspconfig.compute_contact(contact_z)
         if contact_points.shape[0]>2:
             for contact_point in contact_points:
-                if not graspconfig.is_gripper_colliding_with_point_cloud(contact_point, graspconfig.point_clouds, contact_z , contact_y):
+                if not graspconfig.is_gripper_colliding_with_point_cloud(contact_point, graspconfig.point_cloud, contact_z , contact_y):
                     #print('contact_point={},grasp_z={}'.format(contact_point,contact_z))
                     print(contact_point,contact_z)
                     count += 1
-                    break
+         
     end=time.time()
     print(end-start)
     print(count)

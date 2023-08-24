@@ -75,10 +75,13 @@ if __name__ == "__main__":
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(points)
 
-    filepath='area_get/output/2023-08-23/15-28-40.txt'#读取抓取点和抓取配置
+    filepath='area_get/output/2023-08-24/00-29-32.txt'
+    #读取抓取点和抓取配置
     grasppoints , graspvector_z = graspconfig(filepath)
     pos=grasppoints[0]
     vec=graspvector_z[0]
+    # pos = [0,0,0]
+    # vec = [1,0,0]
     print('pos={},vec={}'.format(pos,vec))
 
   

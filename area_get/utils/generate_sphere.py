@@ -14,7 +14,7 @@ def generate_unit_sphere_points(num_points):
 
     return points
 #生成1296个抓取向量
-num_points = 1296
+num_points = 360
 unit_sphere_points = generate_unit_sphere_points(num_points)
 
 # print(unit_sphere_points)
