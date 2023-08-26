@@ -25,24 +25,22 @@ def graspconfig(filepath):
     return list1, list2
 
 # 创建一个简单的二指夹爪
-def create_gripper(box1_width=0.03, box1_height=0.07, box1_depth=0.01, beam_height=0.02,box3_depth = 0.03, distance=0.08, position=(0, 0, 0), gripper_vector=(0, 0, 1)):
-    box1 = o3d.geometry.TriangleMesh.create_box(width=box1_depth, height=box1_height, depth=box1_width)
-    box1.translate((-distance / 2 - box1_depth, 0, 0))
-    box2 = o3d.geometry.TriangleMesh.create_box(width=box1_depth, height=box1_height, depth=box1_width)
-    box2.translate((distance / 2, 0, 0))
+def create_gripper(box1_width=0.03, box1_height=0.07, box1_depth=0.01, beam_height=0.02,box3_depth = 0.03, \
+                   distance=0.08, position=(0, 0, 0), gripper_vector=(0, 0, 1),contact_x=(1,0,0),contact_y=(0,1,0)):
+    box1 = o3d.geometry.TriangleMesh.create_box(width=box1_width, height=box1_depth, depth=box1_height)
+    box1.translate(( - beam_height/2,-distance / 2 - box1_depth , -box3_depth/2))
+    box2 = o3d.geometry.TriangleMesh.create_box(width=box1_width, height=box1_depth, depth=box1_height)
+    box2.translate(( - beam_height/2,distance / 2, -box3_depth/2))
     
-    box3 = o3d.geometry.TriangleMesh.create_box(width=distance, height=beam_height, depth=box3_depth)
-    box3.translate((-distance / 2,box1_height - beam_height, (box1_width- box3_depth) / 2))
+    box3 = o3d.geometry.TriangleMesh.create_box(width=box3_depth, height=distance, depth=beam_height)
+    box3.translate(((box1_width- box3_depth) / 2 - beam_height/2, -distance / 2, -box3_depth/2 ))
     
     gripper = box1 + box2 + box3
+
+
     
     # 计算旋转
-    gripper_vector = np.array(gripper_vector) / np.linalg.norm(gripper_vector)
-    z_axis = np.array([0, 0, 1])
-    rotation_axis = np.cross(z_axis, gripper_vector)
-    rotation_angle = np.arccos(np.dot(z_axis, gripper_vector))
-    rotation_matrix = o3d.geometry.get_rotation_matrix_from_axis_angle(rotation_axis * rotation_angle)
-    
+    rotation_matrix=np.column_stack((np.array(contact_x), -np.array(gripper_vector),  np.array(contact_y)))
     # 旋转并移动夹爪
     gripper.rotate(rotation_matrix)
     gripper.translate(position)
@@ -119,8 +117,10 @@ if __name__ == "__main__":
     # grasppoints , graspvector_z = graspconfig(filepath)
 
     pos = [0,0,0]
-    vec = [1,0,0]
-    grippers = [create_gripper(position=pos, gripper_vector=vec)]
+    vec = [0,0,1]
+    contact_x=[1,0,0]
+    contact_y=[0,1,0]
+    grippers = [create_gripper(position=pos, gripper_vector=vec,contact_x=contact_x,contact_y=contact_y)]
 
     # grasppoints = [[0,0,-0.02],[-0.01,-0.1,-0.03],[-0.01,0.02,0.05],[-0.01,0.02,0.15],[-0.01,0.02,0.1],[-0.01,0.02,0.2]]
     # graspvector_z = [[0,1,0],[0,1,1],[0,0,1],[0,0.5,1],[0,1.2,1],[0,-1,1]]
@@ -138,10 +138,10 @@ if __name__ == "__main__":
     #读取抓取点和抓取配置
     # grasppoints , graspvector_z = graspconfig(filepath)
 
-    pos = [-0.01,0.02,0.2]
-    vec = [0,-1,1]
-    # pos = [0,0,0]
-    # vec = [1,0,0]
+    # pos = [-0.01,0.02,0.2]
+    # vec = [0,-1,1]
+    pos = [0,0,0]
+    vec = [0,0,1]
     grippers = [create_gripper(position=pos, gripper_vector=vec)]
 
     # grasppoints = [[0,0,-0.02],[-0.01,-0.1,-0.03],[-0.01,0.02,0.05],[-0.01,0.02,0.15],[-0.01,0.02,0.1],[-0.01,0.02,0.2]]

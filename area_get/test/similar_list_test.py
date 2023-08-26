@@ -1,29 +1,10 @@
 
-# list=[1,2,1,2,1,6,1,8,2,10]
-# list_backup=list.copy()
-# index_list=[]
-# for t in range(len(list)):
-#     index_list.append(t)
+import numpy as np
 
-# for i in range(len(list)):
-#     count=0
+vector1 = np.array([1, 2, 3])
+vector2 = np.array([4, 5, 6])
+vector3 = np.array([7, 8, 9])
 
-#     for j in range(i+1,len(list)):
-#         if list[i]==list[j]:
-#             list_backup.pop(j)
-#             count+=1
-#     if count>=1:
-#         print(list[i],count)
-#         list_backup=list.copy()
-   
+matrix = np.column_stack((vector1, vector2, vector3))
 
-list=[1,2,1,2,1,6,1,8,2,10]
-for i in range(len(list)):
-    index=[]
-    for j in range(i+1,len(list)):
-        if list[i]==list[j]:
-            index.append(j)
-    if len(index)>= 1:
-        for t in index:
-            list.pop(t)
-
+print(matrix)
