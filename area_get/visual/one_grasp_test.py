@@ -37,10 +37,8 @@ def create_gripper(box1_width=0.03, box1_height=0.07, box1_depth=0.01, beam_heig
     
     gripper = box1 + box2 + box3
 
-
-    
     # 计算旋转
-    rotation_matrix=np.column_stack((np.array(contact_x), -np.array(gripper_vector),  np.array(contact_y)))
+    rotation_matrix=np.column_stack((np.array(contact_x), np.array(contact_y), np.array(gripper_vector)))
     # 旋转并移动夹爪
     gripper.rotate(rotation_matrix)
     gripper.translate(position)
