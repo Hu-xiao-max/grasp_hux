@@ -7,13 +7,14 @@ import sys
 import time
 import datetime
 import os
+import math
 
 class grasp_config():
     def __init__(self, filepath):
             self.filepath=filepath
-            self.point_clouds=self.read_obj_vertices()
+            self.point_cloud=self.read_obj_vertices()
             #物体点云downsample按照0.01m downsample
-            #self.point_clouds=self.downsample_points(self.point_clouds,voxel_size=0.01)
+            self.point_clouds=self.downsample_points(self.point_cloud,voxel_size=0.01)
             #print(self.point_clouds.shape)
             # 物体的点法向量
             self.normals = self.generate_normals()
@@ -24,6 +25,7 @@ class grasp_config():
             self.grasp_x,self.grasp_y=self.rotate_points_around(self.grasp_vectors)
             #夹爪尺寸参照GPD的Antipod抓取
             self.gripper_size = np.array([0.03, 0.08, 0.05])
+            self.box1_depth=0.01
 
             self.grasp_interaction_area=[]
             self.list_contact_points_shape=[]
@@ -125,12 +127,18 @@ class grasp_config():
         return rotated_points_x,rotated_points_y
 
     
-    def compute_contact(self,gripper_direction):
+    def compute_contact(self, gripper_direction):
         # 计算夹爪方向与点云法向量之间的夹角
-        angles = np.arccos(np.dot(self.normals, gripper_direction))
+        gripper_direction = np.array(gripper_direction)
+        gripper_direction_norm = np.linalg.norm(gripper_direction)
+        normals_norm = np.linalg.norm(self.normals, axis=1)
+        
+        cos_angles = np.dot(self.normals, gripper_direction) / (normals_norm * gripper_direction_norm)
+        angles = np.arccos(cos_angles)
+        
         # 定义一个阈值来选择可接触的点（这里假设夹角小于 45 度的点可以接触）
         # 提取可接触的点
-        contact_points = np.asarray(self.pcd.points)[np.logical_and(np.radians(160) < angles, angles < np.radians(180))]
+        contact_points = np.asarray(self.pcd.points)[np.logical_and(np.radians(135) < angles, angles < np.radians(180))]
         
         # 将可接触的点保存到新的点云对象并可视化
         # contact_points_pcd = o3d.geometry.PointCloud()
@@ -140,7 +148,7 @@ class grasp_config():
     
 
     def is_point_colliding_with_point_cloud(self,point, point_cloud):
-        threshold_distance = 0.001  # Set a threshold distance for collision detection
+        threshold_distance = 0.002  # Set a threshold distance for collision detection
         kdtree = cKDTree(point_cloud)
         nearest_distance, nearest_index = kdtree.query(point)
         if nearest_distance <= threshold_distance:
@@ -152,14 +160,32 @@ class grasp_config():
         # Compute the positions of the gripper fingertips in the object coordinate system
         gripperwidth_size=self.gripper_size[1]
         half_gripperwidth_size = gripperwidth_size / 2
+        half_out_gripperwidth_size = half_gripperwidth_size + self.box1_depth#夹爪外边缘
         gripper_grasp_point = gripper_grasp_point - self.gripper_size[2] * gripper_grasp_vector
         fingertip1_position = gripper_grasp_point + half_gripperwidth_size * contact_y
         fingertip2_position = gripper_grasp_point - half_gripperwidth_size * contact_y
+        fingertip3_position = gripper_grasp_point + self.gripper_size[2] * 1/4 * gripper_grasp_vector + half_out_gripperwidth_size * contact_y
+        fingertip4_position = gripper_grasp_point + self.gripper_size[2] * 1/4 * gripper_grasp_vector - half_out_gripperwidth_size * contact_y
+        fingertip5_position = gripper_grasp_point + self.gripper_size[2] * 1/2 * gripper_grasp_vector + half_out_gripperwidth_size * contact_y
+        fingertip6_position = gripper_grasp_point + self.gripper_size[2] * 1/2 * gripper_grasp_vector - half_out_gripperwidth_size * contact_y
+
+        fingertip7_position = gripper_grasp_point + self.gripper_size[2]  * gripper_grasp_vector + half_gripperwidth_size * contact_y
+        fingertip8_position = gripper_grasp_point + self.gripper_size[2]  * gripper_grasp_vector - half_gripperwidth_size * contact_y
+        fingertip9_position = gripper_grasp_point + self.gripper_size[2]  * gripper_grasp_vector + half_out_gripperwidth_size  * contact_y
+        fingertip10_position = gripper_grasp_point + self.gripper_size[2] * gripper_grasp_vector - half_out_gripperwidth_size  * contact_y
 
         # Check if the fingertips are colliding with the point cloud
         fingertip1_colliding = self.is_point_colliding_with_point_cloud(fingertip1_position, point_cloud)
         fingertip2_colliding = self.is_point_colliding_with_point_cloud(fingertip2_position, point_cloud)
-        return fingertip1_colliding or fingertip2_colliding
+        fingertip3_colliding = self.is_point_colliding_with_point_cloud(fingertip3_position, point_cloud)
+        fingertip4_colliding = self.is_point_colliding_with_point_cloud(fingertip4_position, point_cloud)
+        fingertip5_colliding = self.is_point_colliding_with_point_cloud(fingertip5_position, point_cloud)
+        fingertip6_colliding = self.is_point_colliding_with_point_cloud(fingertip6_position, point_cloud)
+        fingertip7_colliding = self.is_point_colliding_with_point_cloud(fingertip7_position, point_cloud)
+        fingertip8_colliding = self.is_point_colliding_with_point_cloud(fingertip8_position, point_cloud)
+        fingertip9_colliding = self.is_point_colliding_with_point_cloud(fingertip9_position, point_cloud)
+        fingertip10_colliding = self.is_point_colliding_with_point_cloud(fingertip10_position, point_cloud)
+        return fingertip1_colliding or fingertip2_colliding or fingertip3_colliding or fingertip4_colliding or fingertip5_colliding or fingertip6_colliding or fingertip7_colliding or fingertip8_colliding or fingertip9_colliding or fingertip10_colliding
 
     
 
@@ -180,11 +206,12 @@ if __name__=='__main__':
         contact_points=graspconfig.compute_contact(contact_z)
         if contact_points.shape[0]>2:
             for contact_point in contact_points:
-                if not graspconfig.is_gripper_colliding_with_point_cloud(contact_point, graspconfig.point_clouds, contact_z , contact_y):
+                if not graspconfig.is_gripper_colliding_with_point_cloud(contact_point, graspconfig.point_cloud, contact_z , contact_y):
                     #print('contact_point={},grasp_z={}'.format(contact_point,contact_z))
-                    print(contact_point,contact_z)
+                    print(contact_point,contact_z,contact_x,contact_y)
                     count += 1
                     break
+                 
     end=time.time()
     print(end-start)
     print(count)
