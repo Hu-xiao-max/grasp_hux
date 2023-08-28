@@ -1,50 +1,59 @@
 import open3d as o3d
 import numpy as np
 
+import re
+
 def graspconfig(filepath):
     with open(filepath, 'r') as file:
         data = file.read()
     # 将数据分割成行
     rows = data.split('\n')
-    # 初始化两个新的列表
+    # 初始化四个新的列表
     list1 = []
     list2 = []
+    list3 = []
+    list4 = []
     # 遍历每一行（过滤掉空行）
     for row in filter(None, rows):
-        # 将行分割成两个列表
-        l1, l2 = row.split('] [')
+        # 使用正则表达式匹配四个向量
+        vectors = re.findall(r'\[([^\]]+)\]', row)
         # 去掉多余的字符并将字符串分割成数字列表
-        l1 = l1.replace('[', '').split()
-        l2 = l2.replace(']', '').split()
+        l1 = vectors[0].split()
+        l2 = vectors[1].split()
+        l3 = vectors[2].split()
+        l4 = vectors[3].split()
         # 将数字字符串转换为浮点数
         l1 = [float(num) for num in l1]
         l2 = [float(num) for num in l2]
-        # 将两个列表分别添加到新列表中
+        l3 = [float(num) for num in l3]
+        l4 = [float(num) for num in l4]
+        # 将四个列表分别添加到新列表中
         list1.append(l1)
         list2.append(l2)
-    return list1, list2
+        list3.append(l3)
+        list4.append(l4)
+    return list1, list2, list3, list4
 
 # 创建一个简单的二指夹爪
-def create_gripper(box1_width=0.03, box1_height=0.07, box1_depth=0.01, beam_height=0.02,box3_depth = 0.03, distance=0.08, position=(0, 0, 0), gripper_vector=(0, 0, 1)):
-    box1 = o3d.geometry.TriangleMesh.create_box(width=box1_depth, height=box1_height, depth=box1_width)
-    box1.translate((-distance / 2 - box1_depth, 0, 0))
-    box2 = o3d.geometry.TriangleMesh.create_box(width=box1_depth, height=box1_height, depth=box1_width)
-    box2.translate((distance / 2, 0, 0))
+def create_gripper(box1_width=0.03, box1_height=0.07, box1_depth=0.01, beam_height=0.02,box3_depth = 0.03, \
+                   distance=0.08, position=(0, 0, 0), gripper_vector=(0, 0, 1),contact_x=(1,0,0),contact_y=(0,1,0)):
+    box1 = o3d.geometry.TriangleMesh.create_box(width=box1_width, height=box1_depth, depth=box1_height)
+    box1.translate(( - beam_height/2,-distance / 2 - box1_depth , -box3_depth/2))
+    box2 = o3d.geometry.TriangleMesh.create_box(width=box1_width, height=box1_depth, depth=box1_height)
+    box2.translate(( - beam_height/2,distance / 2, -box3_depth/2))
     
-    box3 = o3d.geometry.TriangleMesh.create_box(width=distance, height=beam_height, depth=box3_depth)
-    box3.translate((-distance / 2,box1_height - beam_height, (box1_width- box3_depth) / 2))
+    box3 = o3d.geometry.TriangleMesh.create_box(width=box3_depth, height=distance, depth=beam_height)
+    box3.translate(((box1_width- box3_depth) / 2 - beam_height/2, -distance / 2, -box3_depth/2 ))
     
     gripper = box1 + box2 + box3
-    
+
     # 计算旋转
-    gripper_vector = np.array(gripper_vector) / np.linalg.norm(gripper_vector)
-    z_axis = np.array([0, 0, 1])
-    rotation_axis = np.cross(z_axis, gripper_vector)
-    rotation_angle = np.arccos(np.dot(z_axis, gripper_vector))
-    rotation_matrix = o3d.geometry.get_rotation_matrix_from_axis_angle(rotation_axis * rotation_angle)
-    
+    rotation_matrix=np.column_stack((np.array(contact_x), np.array(contact_y), np.array(gripper_vector)))
     # 旋转并移动夹爪
     gripper.rotate(rotation_matrix)
+
+    gripper_vector = np.array(gripper_vector)
+    position = position - 1.5*(box1_height - beam_height) * gripper_vector
     gripper.translate(position)
     return gripper
 
@@ -75,10 +84,11 @@ if __name__ == "__main__":
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(points)
 
-    filepath='area_get/output/2023-08-23/22-41-43.txt'#读取抓取点和抓取配置
-    grasppoints , graspvector_z = graspconfig(filepath)
+    filepath='area_get/output/2023-08-27/22-22-11.txt'#读取抓取点和抓取配置
+    grasppoints , graspvector_z , graspvector_x , graspvector_y= graspconfig(filepath)
   
-    grippers = [create_gripper(position=pos, gripper_vector=vec) for pos, vec in zip(grasppoints, graspvector_z)]
+    grippers = [create_gripper(position=pos, gripper_vector=vec,contact_x=vec_x,contact_y=vec_y)\
+                 for pos, vec , vec_x ,vec_y in zip(grasppoints, graspvector_z , graspvector_x , graspvector_y)]
 
     visualize_gripper_and_point_cloud(grippers, point_cloud)
 
