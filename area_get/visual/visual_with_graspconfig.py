@@ -53,7 +53,7 @@ def create_gripper(box1_width=0.03, box1_height=0.07, box1_depth=0.01, beam_heig
     gripper.rotate(rotation_matrix)
 
     gripper_vector = np.array(gripper_vector)
-    position = position - 1.5*(box1_height - beam_height) * gripper_vector
+    position = position - 1.3*(box1_height - beam_height) * gripper_vector# 夹爪后移一段距离
     gripper.translate(position)
     return gripper
 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(points)
 
-    filepath='area_get/output/2023-08-27/22-22-11.txt'#读取抓取点和抓取配置
+    filepath='area_get/output/2023-8-29/23-41-41.txt'#读取抓取点和抓取配置
     grasppoints , graspvector_z , graspvector_x , graspvector_y= graspconfig(filepath)
   
     grippers = [create_gripper(position=pos, gripper_vector=vec,contact_x=vec_x,contact_y=vec_y)\
