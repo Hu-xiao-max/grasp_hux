@@ -159,8 +159,8 @@ class grasp_config():
         half_gripperwidth_size = gripperwidth_size / 2
         half_out_gripperwidth_size = half_gripperwidth_size + self.box1_depth#夹爪外边缘
         gripper_grasp_point = gripper_grasp_point - self.gripper_size[2] * gripper_grasp_vector
-        fingertip1_position = gripper_grasp_point + half_gripperwidth_size * contact_y
-        fingertip2_position = gripper_grasp_point - half_gripperwidth_size * contact_y
+        fingertip1_position = gripper_grasp_point + half_out_gripperwidth_size * contact_y
+        fingertip2_position = gripper_grasp_point - half_out_gripperwidth_size * contact_y
         # Add more points to check for collision inside the gripper
         inner_points = [gripper_grasp_point + i * self.gripper_size[2] * gripper_grasp_vector for i in np.linspace(0, 1, 5)]
         fingertip_positions = [fingertip1_position, fingertip2_position] + inner_points
@@ -188,7 +188,8 @@ if __name__=='__main__':
         contact_points=graspconfig.compute_contact(contact_z)
         if contact_points.shape[0]>2:
             for contact_point in contact_points:
-                if not graspconfig.is_gripper_colliding_with_point_cloud(contact_point, graspconfig.point_cloud, contact_z , contact_y):
+                grasp_moveforward_point = contact_point + 0.005 * contact_z #把抓取点前移，如果前移后的抓取与物体碰撞则去除
+                if not graspconfig.is_gripper_colliding_with_point_cloud(grasp_moveforward_point, graspconfig.point_cloud, contact_z , contact_y):
                     #print('contact_point={},grasp_z={}'.format(contact_point,contact_z))
                     print(contact_point,contact_z,contact_x,contact_y)
                     count += 1
@@ -198,10 +199,3 @@ if __name__=='__main__':
     print(end-start)
     print(count)
     print(graspconfig.point_clouds.shape)
-
-
-     
-    
-
-        
-                

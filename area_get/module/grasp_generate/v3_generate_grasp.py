@@ -8,6 +8,8 @@ import time
 import datetime
 import os
 import math
+import fcl
+from fcl import CollisionObject, Box, DynamicAABBTreeCollisionManager, CollisionData, defaultCollisionCallback
 
 class grasp_config():
     def __init__(self, filepath):
@@ -26,6 +28,9 @@ class grasp_config():
             #夹爪尺寸参照GPD的Antipod抓取
             self.gripper_size = np.array([0.03, 0.08, 0.05])
             self.box1_depth=0.01
+
+            # 作碰撞检测使用的夹爪模型
+            self.gripper = self.create_gripper()
 
             self.grasp_interaction_area=[]
             self.list_contact_points_shape=[]
@@ -63,7 +68,7 @@ class grasp_config():
     def generate_pcd(self):
         #qpc重定向，这样点云法向量都指向物体外部
         pcd = o3d.geometry.PointCloud()
-        pcd.points = o3d.utility.Vector3dVector(self.point_clouds)
+        pcd.points = o3d.utility.Vector3dVector(self.point_cloud)
         k = 10  # k控制的是搜索的neighbour
         o3d.geometry.PointCloud.estimate_normals(pcd, search_param=o3d.geometry.KDTreeSearchParamKNN(k))
     
@@ -144,32 +149,72 @@ class grasp_config():
         return contact_points
     
 
-    def is_point_colliding_with_point_cloud(self,point, point_cloud):
-        threshold_distance = 0.001  # Set a threshold distance for collision detection
-        kdtree = cKDTree(point_cloud)
-        nearest_distance, nearest_index = kdtree.query(point)
-        if nearest_distance <= threshold_distance:
-            return True#返回True代表发生碰撞了
-        else:
-            return False#代表没发生碰撞
+    def create_gripper(self,box1_width=0.03, box1_height=0.07, box1_depth=0.01, beam_height=0.02, box3_depth=0.03,
+                            distance=0.08):
+        box1 = o3d.geometry.TriangleMesh.create_box(width=box1_width, height=box1_depth, depth=box1_height)
+        box1.translate((-beam_height / 2, -distance / 2 - box1_depth, -box3_depth / 2))
+        box2 = o3d.geometry.TriangleMesh.create_box(width=box1_width, height=box1_depth, depth=box1_height)
+        box2.translate((-beam_height / 2, distance / 2, -box3_depth / 2))
 
-    def is_gripper_colliding_with_point_cloud(self, gripper_grasp_point, point_cloud , gripper_grasp_vector, contact_y):
-        # Compute the positions of the gripper fingertips and inner points in the object coordinate system
-        gripperwidth_size=self.gripper_size[1]
-        half_gripperwidth_size = gripperwidth_size / 2
-        half_out_gripperwidth_size = half_gripperwidth_size + self.box1_depth#夹爪外边缘
-        gripper_grasp_point = gripper_grasp_point - self.gripper_size[2] * gripper_grasp_vector
-        fingertip1_position = gripper_grasp_point + half_gripperwidth_size * contact_y
-        fingertip2_position = gripper_grasp_point - half_gripperwidth_size * contact_y
-        # Add more points to check for collision inside the gripper
-        inner_points = [gripper_grasp_point + i * self.gripper_size[2] * gripper_grasp_vector for i in np.linspace(0, 1, 5)]
-        fingertip_positions = [fingertip1_position, fingertip2_position] + inner_points
+        box3 = o3d.geometry.TriangleMesh.create_box(width=box3_depth, height=distance, depth=beam_height)
+        box3.translate(((box1_width - box3_depth) / 2 - beam_height / 2, -distance / 2, -box3_depth / 2))
 
-        # Check if the fingertips and inner points are colliding with the point cloud
-        for pos in fingertip_positions:
-            if self.is_point_colliding_with_point_cloud(pos, point_cloud):
-                return True
-        return False
+        origin_gripper = box1 + box2 + box3
+
+        return origin_gripper
+
+
+    def create_gripper_model(self,position=(0, 0, 0),gripper_vector=(0, 0, 1),
+                            contact_x=(1, 0, 0), contact_y=(0, 1, 0)):
+        # 计算旋转
+        rotation_matrix = np.column_stack((np.array(contact_x), np.array(contact_y), np.array(gripper_vector)))
+        # 旋转并移动夹爪
+        gripper= self.gripper
+        gripper.rotate(rotation_matrix)
+        gripper.translate(position)
+        return gripper
+
+    def create_triangle_mesh_from_point_cloud(self):
+        mesh = o3d.geometry.TriangleMesh()
+        mesh.vertices = o3d.utility.Vector3dVector(self.point_cloud)
+        return mesh
+
+    def check_collision(self, gripper_mesh):
+        object_mesh = self.create_triangle_mesh_from_point_cloud()
+        object_fcl = CollisionObject(Box(*object_mesh.get_max_bound() - object_mesh.get_min_bound()))
+        object_fcl.setTranslation(object_mesh.get_center())
+        gripper_fcl = CollisionObject(Box(*gripper_mesh.get_max_bound() - gripper_mesh.get_min_bound()))
+        gripper_fcl.setTranslation(gripper_mesh.get_center())
+
+        collision_manager = DynamicAABBTreeCollisionManager()
+        collision_manager.registerObject(object_fcl)
+        collision_manager.registerObject(gripper_fcl)
+        collision_manager.setup()
+
+        collision_data = CollisionData()
+        collision_manager.collide(collision_data, defaultCollisionCallback)
+        return collision_data.result.is_collision
+
+
+    def find_nearest_points_on_gripper(self, gripper_mesh,contact_point,contact_y):
+        # 获取夹爪的轴对齐边界框
+        aabb = gripper_mesh.get_axis_aligned_bounding_box()
+
+        # 获取夹爪内的点
+        inside_points = np.asarray(self.pcd.points)[aabb.get_point_indices_within_bounding_box(self.pcd.points)]
+        
+        # 使用 cKDTree 加速最近邻搜索
+        tree = cKDTree(inside_points)
+        half_gripperwidth_size = self.gripper_size[1] / 2
+        
+        # 计算离二指夹爪最近的两个点的索引
+        gripper_finger1_center = contact_point + half_gripperwidth_size * contact_y
+        gripper_finger2_center = contact_point - half_gripperwidth_size * contact_y
+        nearest_point_index1 = tree.query(gripper_finger1_center)[1]
+        nearest_point_index2 = tree.query(gripper_finger2_center)[1]
+        
+        return nearest_point_index1, nearest_point_index2
+
 
 
 if __name__=='__main__':
@@ -181,27 +226,35 @@ if __name__=='__main__':
 
     start=time.time()
     filepath='./area_get/object/nontextured.obj'
-    graspconfig=grasp_config(filepath)
+    graspconfig = grasp_config(filepath)
     count=0
     for contact_z, contact_x, contact_y in zip(graspconfig.grasp_vectors, graspconfig.grasp_x, graspconfig.grasp_y):
     # 遍历1296个抓取向量生成抓取点
         contact_points=graspconfig.compute_contact(contact_z)
         if contact_points.shape[0]>2:
-            for contact_point in contact_points:
-                if not graspconfig.is_gripper_colliding_with_point_cloud(contact_point, graspconfig.point_cloud, contact_z , contact_y):
+            for contact_point in contact_points:# contact_points指的是物体表面的点
+                grasp_moveforward_point = contact_point + 0.01*contact_z#把抓取点前移1cm，如果前移后的抓取与物体碰撞则去除
+                # 创建夹爪模型
+                gripper_mesh = graspconfig.create_gripper_model(grasp_moveforward_point, contact_z , contact_x, contact_y)
+                if not graspconfig.check_collision(gripper_mesh):
                     #print('contact_point={},grasp_z={}'.format(contact_point,contact_z))
-                    print(contact_point,contact_z,contact_x,contact_y)
-                    count += 1
-                    break
+                    nearest_point_index1, nearest_point_index2 = graspconfig.find_nearest_points_on_gripper(gripper_mesh,contact_point,contact_y)
+                    # 获取这两个点的法向量
+                    normal1 = graspconfig.normals[nearest_point_index1]
+                    normal2 = graspconfig.normals[nearest_point_index2]
+
+                    # 计算 contact_y 与 normal1 和 normal2 的夹角
+                    angle1 = np.arccos(np.dot(-contact_y, normal1) / (np.linalg.norm(-contact_y) * np.linalg.norm(normal1)))
+                    angle2 = np.arccos(np.dot(contact_y, normal2) / (np.linalg.norm(contact_y) * np.linalg.norm(normal2)))
+
+                    if  graspconfig.degrees_to_radians(180-f_alpha)< angle1  < graspconfig.degrees_to_radians(180) \
+                        and graspconfig.degrees_to_radians(180-f_alpha)< angle2  < graspconfig.degrees_to_radians(180):
+                    
+                        print(angle1,angle2,contact_point,contact_z,contact_x,contact_y)
+                        count += 1
+                        break
                  
     end=time.time()
     print(end-start)
     print(count)
     print(graspconfig.point_clouds.shape)
-
-
-     
-    
-
-        
-                
