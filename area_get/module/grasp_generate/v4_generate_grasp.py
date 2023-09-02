@@ -140,7 +140,7 @@ class grasp_config():
         
         # 定义一个阈值来选择可接触的点（这里假设夹角小于 45 度的点可以接触）
         # 提取可接触的点
-        contact_points = np.asarray(self.pcd.points)[np.logical_and(np.radians(150) < angles, angles < np.radians(180))]
+        contact_points = np.asarray(self.pcd.points)[np.logical_and(np.radians(135) < angles, angles < np.radians(180))]
         
         # 将可接触的点保存到新的点云对象并可视化
         # contact_points_pcd = o3d.geometry.PointCloud()
@@ -220,54 +220,63 @@ class grasp_config():
         nearest_normal = self.normals[nearest_index]
 
         return nearest_normal
+    
+
 
 
 
 if __name__=='__main__':
     now = datetime.datetime.now()
-    if not os.path.exists('./area_get/output/'+now.strftime('%Y-%m-%d')):
-        os.makedirs('./area_get/output/'+now.strftime('%Y-%m-%d'))
-    f=open('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M-%S') +".txt","w")
-    sys.stdout=f
+    if not os.path.exists('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M')):
+        os.makedirs('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M'))
 
-    start=time.time()
-    filepath='./area_get/object/nontextured.obj'
-    graspconfig = grasp_config(filepath)
-    count=0
-    
-    half_gripperwidth_size = 0.04
-    f_alpha = 45 #摩擦系数
-    rad1 = math.radians(180-f_alpha)
-    rad2 = math.radians(180)
+    datasetpath = '/root/HUX/dataset/ycb'
+    obj_list = os.listdir(datasetpath)
+    for obj in obj_list:
 
-    for contact_z, contact_x, contact_y in zip(graspconfig.grasp_vectors, graspconfig.grasp_x, graspconfig.grasp_y):
-    # 遍历1296个抓取向量生成抓取点
-        contact_points=graspconfig.compute_contact(contact_z)
-        if contact_points.shape[0]>2:
-            for contact_point in contact_points:# contact_points指的是物体表面的点
-                grasp_moveforward_point = contact_point + 0.01*contact_z#把抓取点前移1cm，如果前移后的抓取与物体碰撞则去除
-                # 创建夹爪模型
-                box1,box2,box3 = graspconfig.create_gripper_model(grasp_moveforward_point, contact_z , contact_x, contact_y)
-                if graspconfig.check_collision(box1) or graspconfig.check_collision(box2) or graspconfig.check_collision(box3):
-                    continue
-                else:
-                    gripper_finger1_center = contact_point + half_gripperwidth_size * contact_y
-                    gripper_finger2_center = contact_point - half_gripperwidth_size * contact_y
+        f=open('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M')+'/'+ obj +".txt","w")
+        sys.stdout=f
 
-                    normal1 = graspconfig.get_nearest_normal(gripper_finger1_center)
-                    normal2 = graspconfig.get_nearest_normal(gripper_finger2_center)
-                    
-                    
-                    angle1 = np.arccos(np.dot(-contact_y, normal1) / (np.linalg.norm(-contact_y) * np.linalg.norm(normal1)))
-                    angle2 = np.arccos(np.dot(contact_y, normal2) / (np.linalg.norm(contact_y) * np.linalg.norm(normal2)))
+        start=time.time()
+        filepath= datasetpath + '/' + obj + '/poisson/textured.obj'
+        if  os.path.exists(filepath):
+            graspconfig = grasp_config(filepath)
 
-                    if rad1 < angle1 < rad2 and rad1 < angle2 < rad2:
-                        score = math.tan(3.14-max(angle1,angle2))
-                        print(contact_point,contact_z,contact_x,contact_y , score, angle1 , angle2)
-                        count += 1
+            count=0
+            
+            half_gripperwidth_size = 0.04
+            f_alpha = 45 #摩擦系数
+            rad1 = math.radians(180-f_alpha)
+            rad2 = math.radians(180)
+
+            for contact_z, contact_x, contact_y in zip(graspconfig.grasp_vectors, graspconfig.grasp_x, graspconfig.grasp_y):
+            # 遍历1296个抓取向量生成抓取点
+                contact_points=graspconfig.compute_contact(contact_z)
+                if contact_points.shape[0]>2:
+                    for contact_point in contact_points:# contact_points指的是物体表面的点
+                        grasp_moveforward_point = contact_point + 0.01*contact_z#把抓取点前移1cm，如果前移后的抓取与物体碰撞则去除
+                        # 创建夹爪模型
+                        box1,box2,box3 = graspconfig.create_gripper_model(grasp_moveforward_point, contact_z , contact_x, contact_y)
+                        if graspconfig.check_collision(box1) or graspconfig.check_collision(box2) or graspconfig.check_collision(box3):
+                            continue
+                        else:
+                            gripper_finger1_center = contact_point + half_gripperwidth_size * contact_y
+                            gripper_finger2_center = contact_point - half_gripperwidth_size * contact_y
+
+                            normal1 = graspconfig.get_nearest_normal(gripper_finger1_center)
+                            normal2 = graspconfig.get_nearest_normal(gripper_finger2_center)
+                            
+                            
+                            angle1 = np.arccos(np.dot(-contact_y, normal1) / (np.linalg.norm(-contact_y) * np.linalg.norm(normal1)))
+                            angle2 = np.arccos(np.dot(contact_y, normal2) / (np.linalg.norm(contact_y) * np.linalg.norm(normal2)))
+
+                            if rad1 < angle1 < rad2 and rad1 < angle2 < rad2:
+                                score = math.tan(3.14-max(angle1,angle2))
+                                print(score,angle1 , angle2 ,contact_point,contact_z,contact_x,contact_y)
+                                count += 1
+                                break
                         
-                 
-    end=time.time()
-    print(end-start)
-    print(count)
-    print(graspconfig.point_clouds.shape)
+            end=time.time()
+            print(end-start)
+            print(count)
+            print(graspconfig.point_clouds.shape)

@@ -222,12 +222,11 @@ class grasp_config():
         return nearest_normal
 
 
-
 if __name__=='__main__':
     now = datetime.datetime.now()
-    if not os.path.exists('./area_get/output/'+now.strftime('%Y-%m-%d')):
-        os.makedirs('./area_get/output/'+now.strftime('%Y-%m-%d'))
-    f=open('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M-%S') +".txt","w")
+    if not os.path.exists('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M')):
+        os.makedirs('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M'))
+    f=open('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M') +'/'+now.strftime('%H-%M-%S') +".txt","w")
     sys.stdout=f
 
     start=time.time()
@@ -244,6 +243,7 @@ if __name__=='__main__':
     # 遍历1296个抓取向量生成抓取点
         contact_points=graspconfig.compute_contact(contact_z)
         if contact_points.shape[0]>2:
+            best_score = -1
             for contact_point in contact_points:# contact_points指的是物体表面的点
                 grasp_moveforward_point = contact_point + 0.01*contact_z#把抓取点前移1cm，如果前移后的抓取与物体碰撞则去除
                 # 创建夹爪模型
@@ -257,14 +257,16 @@ if __name__=='__main__':
                     normal1 = graspconfig.get_nearest_normal(gripper_finger1_center)
                     normal2 = graspconfig.get_nearest_normal(gripper_finger2_center)
                     
-                    
                     angle1 = np.arccos(np.dot(-contact_y, normal1) / (np.linalg.norm(-contact_y) * np.linalg.norm(normal1)))
                     angle2 = np.arccos(np.dot(contact_y, normal2) / (np.linalg.norm(contact_y) * np.linalg.norm(normal2)))
 
                     if rad1 < angle1 < rad2 and rad1 < angle2 < rad2:
                         score = math.tan(3.14-max(angle1,angle2))
-                        print(contact_point,contact_z,contact_x,contact_y , score, angle1 , angle2)
-                        count += 1
+                        if score > best_score:
+                            best_score = score
+                            count += 1
+                            print(contact_point,contact_z,contact_x,contact_y , best_score, angle1 , angle2)#生成1296个抓取
+                        
                         
                  
     end=time.time()
