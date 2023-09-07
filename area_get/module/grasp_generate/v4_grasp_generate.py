@@ -224,7 +224,7 @@ class grasp_config():
 
 if __name__=='__main__':
     now = datetime.datetime.now()
-    if not os.path.exists('./area_get/output/'+now.strftime('%Y-%m-%d')):
+    if not os.path.exists('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M')):
         os.makedirs('./area_get/output/'+now.strftime('%Y-%m-%d')+'/'+now.strftime('%H-%M'))
 
     datasetpath = '/home/tencent_go/dataset/ycb-tools/models/ycb'
@@ -238,6 +238,7 @@ if __name__=='__main__':
         filepath= datasetpath + '/' + obj + '/poisson/textured.obj'
         if  os.path.exists(filepath):
             graspconfig = grasp_config(filepath)
+            a = graspconfig.gripper_size
 
             count=0
             

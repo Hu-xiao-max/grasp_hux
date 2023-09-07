@@ -109,7 +109,8 @@ def visualize_gripper_and_point_cloud(grippers, point_cloud):
 
 # 主程序
 if __name__ == "__main__":
-    objfilepath='./area_get/object/nontextured.obj'
+    # objfilepath='./area_get/object/nontextured.obj'
+    objfilepath='/home/tencent_go/dataset/objs/bow2.obj'
     points = read_obj_vertices(objfilepath)
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(points)
@@ -122,10 +123,10 @@ if __name__ == "__main__":
     # vec = [0,0,1]
     # contact_x=[1,0,0]
     # contact_y=[0,1,0]
-    pos = [-0.02,0.08,0.04]
+    pos = [-0.02,0.07,-0.08]
     vec = [0,-1,0]
-    contact_x=[0,0,-1]
-    contact_y=[1,0,0]
+    contact_x=[-1,0,0]
+    contact_y=[0,0,-1]
     grippers = [create_gripper(position=pos, gripper_vector=vec,contact_x=contact_x,contact_y=contact_y)]
 
     # grasppoints = [[0,0,-0.02],[-0.01,-0.1,-0.03],[-0.01,0.02,0.05],[-0.01,0.02,0.15],[-0.01,0.02,0.1],[-0.01,0.02,0.2]]

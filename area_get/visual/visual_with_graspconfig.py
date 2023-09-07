@@ -84,7 +84,7 @@ if __name__ == "__main__":
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(points)
 
-    filepath='area_get/output/2023-09-01/21-44-20.txt'#读取抓取点和抓取配置
+    filepath='area_get/output/2023-09-01/20-45-42.txt'#读取抓取点和抓取配置
     grasppoints , graspvector_z , graspvector_x , graspvector_y= graspconfig(filepath)
   
     grippers = [create_gripper(position=pos, gripper_vector=vec,contact_x=vec_x,contact_y=vec_y)\
