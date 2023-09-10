@@ -218,8 +218,9 @@ class grasp_config():
         tree = cKDTree(self.point_clouds)
         _, nearest_index = tree.query(query_point)
         nearest_normal = self.normals[nearest_index]
+        nearest_point = self.point_clouds[nearest_index]
 
-        return nearest_normal
+        return nearest_normal,nearest_point
     
 
 if __name__=='__main__':
@@ -261,20 +262,25 @@ if __name__=='__main__':
                             gripper_finger1_center = contact_point + half_gripperwidth_size * contact_y
                             gripper_finger2_center = contact_point - half_gripperwidth_size * contact_y
 
-                            normal1 = graspconfig.get_nearest_normal(gripper_finger1_center)
-                            normal2 = graspconfig.get_nearest_normal(gripper_finger2_center)
+                            normal1,nearest_p1 = graspconfig.get_nearest_normal(gripper_finger1_center)
+                            normal2,nearest_p2 = graspconfig.get_nearest_normal(gripper_finger2_center)
                             
                             
                             angle1 = np.arccos(np.dot(-contact_y, normal1) / (np.linalg.norm(-contact_y) * np.linalg.norm(normal1)))
                             angle2 = np.arccos(np.dot(contact_y, normal2) / (np.linalg.norm(contact_y) * np.linalg.norm(normal2)))
 
                             if rad1 < angle1 < rad2 and rad1 < angle2 < rad2:
-                                score = math.tan(3.14-max(angle1,angle2))
+                                distance1 = np.linalg.norm(nearest_p1 - contact_point)
+                                distance2 = np.linalg.norm(nearest_p2 - contact_point)
+                                judge_weights = abs(distance1-distance2)
+
+                                if judge_weights < 0.01:
+                                    empowerment_score = 1
+                                else:
+                                    empowerment_score = (1-judge_weights/half_gripperwidth_size)/2
+                                
+                                score = empowerment_score * math.tan(3.14-max(angle1,angle2))
                                 print(contact_point,contact_z,contact_x,contact_y,score,angle1 , angle2)
                                 count += 1
                                 break
                         
-            end=time.time()
-            print(end-start)
-            print(count)
-            print(graspconfig.point_clouds.shape)
