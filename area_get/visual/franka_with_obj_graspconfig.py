@@ -84,6 +84,7 @@ def create_gripper(position=(0, 0, 0), gripper_vector=(0, 0, 1),contact_x=(1,0,0
 
     gripper_vector = np.array(gripper_vector)
     gripper.translate(position)
+    gripper.compute_vertex_normals()
     return gripper
 
 # 主程序

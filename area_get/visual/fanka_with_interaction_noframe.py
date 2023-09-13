@@ -85,6 +85,7 @@ def visualize_gripper_and_point_cloud(grippers, point_cloud):
 
     # 添加夹爪和点云到要显示的几何体列表中
     geometries = grippers + [point_cloud]
+    
 
     # 创建一个可视化器
     vis = o3d.visualization.Visualizer()
@@ -107,7 +108,10 @@ def visualize_gripper_and_point_cloud(grippers, point_cloud):
 # 主程序
 if __name__ == "__main__":
     # objfilepath='./area_get/object/nontextured.obj'
-    objfilepath='/home/tencent_go/dataset/objs/plate_large.obj'
+    # objfilepath='/home/tencent_go/dataset/objs/plate_large.obj'
+    objfilepath='/home/tencent_go/dataset/ycb-tools/models/ycb/056_tennis_ball/google_512k/textured.obj'
+    
+
     points = read_obj_vertices(objfilepath)
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(points)
@@ -119,7 +123,7 @@ if __name__ == "__main__":
     gripper_mesh = load_obj(gripper_obj_path)
 
     # Apply transformations to the gripper mesh
-    pos = [-0.18, 0.02, -0.04]
+    pos = [-0.15, 0, 0]
     vec = [1, 0, 0]
     contact_x = [0, -1, 0]
     contact_y = [0, 0, 1]

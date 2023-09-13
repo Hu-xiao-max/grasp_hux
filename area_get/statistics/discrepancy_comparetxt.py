@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 plt.rcParams.update({'font.size': 28})
 
-filepath1 = 'area_get/output/2023-09-10/17-27/012_strawberry.txt'
-filepath2 = 'area_get/output/2023-09-10/17-27/072-b_toy_airplane.txt'
+filepath1 = 'area_get/output/2023-09-10/17-27/011_banana.txt'
+filepath2 = 'area_get/output/2023-09-11/01-07/011_banana.txt'
 
 def read_data(filepath):
     with open(filepath, "r") as f:

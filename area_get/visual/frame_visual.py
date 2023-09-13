@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 # 球面上均匀分布的点的数量
-num_points = 1200
+num_points = 360
 
 # 生成均匀分布的点
 phi = np.random.uniform(0, np.pi, num_points)
