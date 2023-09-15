@@ -20,20 +20,14 @@ for col in range(1, num_cols):
     row_indices = np.random.choice(num_rows, num_elements_to_change, replace=False)
     distance_matrix_filtered[row_indices, col] = np.random.uniform(0, 50, num_elements_to_change)
 
-# 将对角线元素设置为0
+# 将上三角部分设置为np.nan
+distance_matrix_filtered[np.triu_indices(distance_matrix_filtered.shape[0], k=1)] = np.nan
+
+# 再次将对角线设置为0
 np.fill_diagonal(distance_matrix_filtered, 0)
-
-
-distance_matrix_filtered[np.triu_indices(distance_matrix_filtered.shape[0], k=1)] 
 
 # 创建颜色填充格子图
 im = plt.imshow(distance_matrix_filtered, cmap='viridis_r')  # 使用反向的viridis颜色映射，这样颜色越深代表距离越远
-
-
-
-
-# 将对角线元素设置为0
-np.fill_diagonal(distance_matrix_filtered, 0)
 
 # 添加颜色条并调整大小
 cbar = plt.colorbar(im, shrink=0.8, aspect=20)

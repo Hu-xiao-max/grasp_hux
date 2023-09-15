@@ -83,7 +83,9 @@ def visualize_gripper_and_point_cloud(grippers, point_cloud):
             colors.append([1, 1, 0])  # 1 1 0黄色1,1,1是白色
     point_cloud.colors = o3d.utility.Vector3dVector(colors)
 
-    # 添加夹爪和点云到要显示的几何体列表中
+    # frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.1, origin=[0, 0, 0])
+    # # 添加夹爪和点云到要显示的几何体列表中
+    # geometries = grippers + [point_cloud,frame]
     geometries = grippers + [point_cloud]
     
 
@@ -109,7 +111,7 @@ def visualize_gripper_and_point_cloud(grippers, point_cloud):
 if __name__ == "__main__":
     # objfilepath='./area_get/object/nontextured.obj'
     # objfilepath='/home/tencent_go/dataset/objs/plate_large.obj'
-    objfilepath='/home/tencent_go/dataset/ycb-tools/models/ycb/056_tennis_ball/google_512k/textured.obj'
+    objfilepath='/home/tencent_go/dataset/ycb-tools/models/ycb/003_cracker_box/google_512k/textured.obj'
     
 
     points = read_obj_vertices(objfilepath)
