@@ -1,8 +1,9 @@
 import matplotlib.pyplot as plt
-plt.rcParams.update({'font.size': 28})
-
-filepath1 = 'area_get/output/2023-09-10/17-27/011_banana.txt'
-filepath2 = 'area_get/output/2023-09-11/01-07/011_banana.txt'
+# 更新默认字体大小
+plt.rcParams.update({'font.size': 36})
+name = '026_sponge'
+filepath1 = 'area_get/output/2023-09-10/17-27/'+name+'.txt'
+filepath2 = 'area_get/output/2023-09-11/01-07/'+name+'.txt'
 
 def read_data(filepath):
     with open(filepath, "r") as f:

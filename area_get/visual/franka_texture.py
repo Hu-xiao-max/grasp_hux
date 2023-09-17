@@ -10,15 +10,26 @@ def main():
     # obj = o3d.io.read_triangle_mesh("/home/tencent_go/dataset/objs/plate_large.obj")
     # obj.compute_vertex_normals()
 
-    # 创建坐标系
-    coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.15, origin=[0, 0, 0])
-    # # 可视化
-    # o3d.visualization.draw_geometries([gripper, obj])
-    o3d.visualization.draw_geometries([gripper, coordinate_frame])
+    # # 创建坐标系
+    # coordinate_frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.15, origin=[0, 0, 0])
+    # # # 可视化
+    # # o3d.visualization.draw_geometries([gripper, obj])
+    # o3d.visualization.draw_geometries([gripper, coordinate_frame])
+
+    o3d.visualization.draw_geometries([gripper])
 
 def main1():
     # # # 读取物体模型
     obj = o3d.io.read_triangle_mesh("/home/tencent_go/dataset/objs/plate_large.obj")
+    obj.compute_vertex_normals()
+    # # # 可视化
+
+    o3d.visualization.draw_geometries([obj])
+
+
+def main2():
+    # # # 读取物体模型
+    obj = o3d.io.read_triangle_mesh("/home/tencent_go/dataset/ycb-tools/models/ycb/036_wood_block/google_512k/textured.obj")
     obj.compute_vertex_normals()
     # # # 可视化
 
